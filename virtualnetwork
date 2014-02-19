@@ -1,0 +1,176 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import pyrser
+import sys
+import cmd
+import os
+import getopt
+import glob
+import ipaddress
+from network import *
+
+VERSION = "0.1.2c"
+PRGM = os.path.basename(__file__)
+
+class NetworkShell(cmd.Cmd):
+    intro = """
+    {prgm} {ver}
+    A network comprehension tool.
+    Basic launching: {prgm} file
+    Type help or ? to list commands.
+
+    OPTIONS:
+        -h,--help               Show this help and exit
+        --grammar               Show you how to create your files
+
+    NOTES:
+        - This tool currently doesn't check if either Network address or subnet broadcast address is taken. Remember to check it manually
+        - This tool also currently doesn't handle "Internet". If you want to add an Internet routing, add a router with hostname "Internet",
+          give it the same ip as the router, set default route to the router and the ttl to 255.
+          Be aware that the returning TTL will be a maximum value, if the packet isn't lost.
+        - The author of this tool won't be responsible for misuses of it
+        - The code of this tool is currently open source. If you experiment issues, feel free to report or improve it
+
+    AUTHOR:
+        Original program by Arzaroth <lekva@arzaroth.com>
+    """.format(prgm = PRGM, ver = VERSION)
+    prompt = 'network> '
+
+    def __init__(self, network):
+        cmd.Cmd.__init__(self)
+        self._map = network
+
+    def cmdloop(self, intro=None):
+        if intro is None:
+            print(self.intro)
+        try:
+            cmd.Cmd.cmdloop(self, intro="")
+            self.postloop()
+        except KeyboardInterrupt:
+            print("^C", end="")
+            self.cmdloop(intro)
+
+    def do_ping(self, args):
+        """Try to connect two differents host, display route used. On success, return TTL.
+Ex: ping a1 b1"""
+        if self._map is None:
+            print("No network map loaded yet", file = sys.stderr)
+            return False
+        targets = args.split()
+        if not targets[1:]:
+            print("usage: ping <host1> <host2>", file = sys.stderr)
+            return False
+        def checkhost(host):
+            if host not in self._map:
+                try:
+                    ipaddress.ip_address(host)
+                    return [v for _,v in self._map.items() if v._canConnect__(host.split('.'), 32)]
+                except ValueError:
+                    return []
+            return [self._map[host]]
+        hz = [checkhost(x) for x in targets]
+        if not all([x for x in hz]):
+            print("Unknown host {0}".format(targets[[x for x in hz].index([])]), file = sys.stderr)
+            return False
+        ret,ttl = hz[0][0].canConnect(hz[1][0])
+        if not ret:
+            print("Unable to etablish connection\nPacket dropped...")
+        else:
+            print("Success -- TTL = {}".format(ttl))
+
+    def complete_ping(self, text, line, start_index, end_index):
+        if text:
+            return [host for host in list(self._map.keys()) if host.startswith(text)]
+        else:
+            return list(self._map.keys())
+
+    def do_hosts(self, args):
+        """Show all hosts on the network, including routes.
+When providing argument, only display information for requested host
+Ex: hosts a1"""
+        if self._map is None:
+            print("No network map loaded yet", file = sys.stderr)
+            return False
+        if not args:
+            for _,v in self._map.items():
+                v.showRoutes()
+            return False
+        targets = args.split()
+        if not all([x in self._map for x in targets]):
+            print("Unknown host", file = sys.stderr)
+            return False
+        for x in targets:
+            self._map[x].showRoutes()
+
+    complete_hosts = complete_ping
+
+    def do_loadfile(self, args):
+        """Load a new config file.
+Ex: loadfile sample"""
+        ret = get_networkmap(args)
+        if ret is None:
+            return False
+        self._map = ret
+
+    def complete_loadfile(self, text, line, startidx, endidx):
+        arg = line.split()[1:]
+        if not arg:
+            arg = ''
+            line = ''
+        else:
+            arg = arg[-1]
+        completion = [x[len(arg) - len(text):] for x in [x if not os.path.isdir(x) else (x + os.path.sep) for x in glob.glob(arg + '*')]]
+        return completion
+
+    def do_bye(self, args):
+        """Quit the program"""
+        print("Exit")
+        return True
+    do_exit = do_bye
+    do_quit = do_bye
+    do_EOF = do_bye
+
+    def emptyline(self):
+        pass
+
+    def default(self, line):
+        print("{0}: command not found".format(line), file = sys.stderr)
+
+def get_networkmap(s):
+    try:
+        return MapParser().parse_file(s).network
+    except (Exception, pyrser.error.ParseError) as inst:
+        print("{0}\nNo network map loaded".format(inst), file = sys.stderr)
+        return None
+
+if __name__ == '__main__':
+    try:
+        opts,args = getopt.getopt(sys.argv[1:], "h", ["help", "grammar"])
+    except getopt.GetoptError as inst:
+        print(inst)
+        exit(1)
+    if any([o in ("-h", "--help") for o,_ in opts]):
+        print(NetworkShell(None).intro)
+        exit(0)
+    if any([o in ("--grammar") for o,_ in opts]):
+        print("""This is the EBNF used by this tool for parsing files. The entry point is the Map rule.
+        Map ::= [[Hosts | Routers] eol*]+ eof;
+        Hosts ::= '[' ws "Host" ws ']' eol+ [Name | Ip | TTL | Route]+;
+        Routers ::= '[' ws "Router" ws ']' eol+ [Name | Ip | TTL | Route]+;
+        Name ::= ws "name" ws '=' ws id ws eol+;
+        Ip ::= ws "ip" ws '=' ws cidraddr ws eol+;
+        TTL ::= ws "ttl" ws '=' ws num ws eol+;
+        Route ::= ws "route" ws '=' ws ["Default" | cidraddr] ws id ws eol+;
+        cidraddr ::= num '.' num '.' num '.' num '/' num;
+        ws ::= [' ' | '\\r' | '\\t']*;
+        num ::= ['0'..'9']+;
+        id ::= ['a'..'z'|'A'..'Z'|'_']['a'..'z'|'A'..'Z'|'0'..'9'|'_']*;
+
+        Where eol stands for End Of Line and eof stands for End Of File.
+        Where \\r stands for a carriage return and \\t for a tabulation.
+        All strings are case insensitive.
+        Both name and ip field are mandatory for creating a host or router.
+""")
+        exit(0)
+    NetworkShell(get_networkmap(args[0]) if args else None).cmdloop()

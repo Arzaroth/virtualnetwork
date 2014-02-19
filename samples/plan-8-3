@@ -1,0 +1,96 @@
+[Host]
+name = j3
+ip = 10.13.17.98/24
+route = default Rj
+ttl = 64
+
+[Host]
+name = j2
+ip = 10.13.17.77/25
+route = default Rj
+ttl = 64
+
+[Host]
+name = j1
+ip = 10.13.17.112/24
+route = default Rj
+ttl = 64
+
+[Router]
+name = Rj
+ip = 10.13.17.63/24
+ip = 10.42.5.2/30
+ip = 10.42.8.1/30
+route = default Rh
+ttl = 255
+
+[Router]
+name = Rh
+ip = 10.42.8.2/30
+ip = 172.16.207.1/20
+route = default Ri
+route = 10.13.0.0/16 Rj
+route = 10.7.0.0/16 Rj
+ttl = 255
+
+[Host]
+name = h1
+ip = 172.16.192.1/20
+route = default Ri
+route = 10.13.0.0/16 Rh
+
+[Host]
+name = h2
+ip = 172.16.205.85/16
+route = default Ri
+route = 10.13.0.0/16 Rh
+
+[Host]
+name = h3
+ip = 172.16.186.12/17
+route = default Ri
+route = 10.13.0.0/16 Rh
+
+[Router]
+name = Ri
+ip = 172.16.207.2/20
+ip = 163.2.25.27/16
+ip = 10.42.1.6/30
+route = default Internet
+route = 10.0.0.0/8 Rg
+route = 172.16.192.0/26 Rh
+route = 172.16.128.0/26 Rh
+route = 172.16.24.0/26 Rh
+ttl = 255
+
+[Router]
+name = Rg
+ip = 10.42.1.5/30
+ip = 10.7.18.129/25
+ip = 10.42.5.1/30
+route = default Rj
+ttl = 255
+
+[Host]
+name = g1
+ip = 10.7.18.188/25
+route = default Rg
+ttl = 128
+
+[Host]
+name = g2
+ip = 10.7.18.254/24
+route = default Rg
+ttl = 128
+
+[Host]
+name = g3
+ip = 10.7.18.242/25
+route = default Rg
+ttl = 128
+
+[Router]
+name = Internet
+ip = 163.2.25.27/16
+route = default Ri
+ttl = 255

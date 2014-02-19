@@ -1,0 +1,308 @@
+[Host]
+name = a1
+ip = 10.1.32.13/30
+route = default Ra
+ttl = 64
+
+[Host]
+name = a2
+ip = 10.1.32.2/24
+route = default Ra
+ttl = 64
+
+[Host]
+name = a3
+ip = 10.1.32.3/29
+route = default Ra
+ttl = 64
+
+[Router]
+name = Ra
+ip = 10.1.32.14/28
+ip = 10.42.2.2/30
+ip = 10.42.1.2/30
+ip = 172.16.207.2/20
+route = default Ri
+route = 10.100.0.0/16 Rb
+route = 172.16.24.0/26 Rb
+route = 10.118.218.0/24 Rb
+route = 192.168.0.0/16 Rb
+ttl = 64
+
+[Router]
+name = Rb
+ip = 10.42.7.161/29
+ip = 10.42.2.1/30
+ip = 172.16.24.46/24
+route = default Ra
+route = 10.100.0.0/16 Rc
+route = 10.118.218.0/24 Rz
+route = 192.168.0.0/16 Rc
+ttl = 64
+
+[Host]
+name = b1
+ip = 172.16.24.18/26
+route = default Rb
+ttl = 64
+
+[Host]
+name = b2
+ip = 172.16.24.12/26
+route = default Rb
+ttl = 64
+
+[Host]
+name = b3
+ip = 172.16.24.75/24
+route = default Rb
+ttl = 64
+
+[Router]
+name = Rc
+ip = 10.42.7.162/30
+ip = 10.42.2.2/30
+ip = 10.100.242.254/16
+route = default Rb
+route = 192.168.0.0/16 Rd
+ttl = 64
+
+[Host]
+name = c1
+ip = 10.100.18.16/16
+route = default Rc
+ttl = 64
+
+[Host]
+name = c2
+ip = 10.100.247.98/16
+route = default Rc
+ttl = 64
+
+[Host]
+name = c3
+ip = 10.100.240.42/20
+route = default Rc
+ttl = 64
+
+[Host]
+name = c4
+ip = 10.100.10.10/17
+route = default Rc
+ttl = 64
+
+[Host]
+name = c5
+ip = 10.100.242.22/24
+route = default Rc
+ttl = 64
+
+[Host]
+name = d1
+ip = 192.168.57.51/27
+route = default Rd
+ttl = 64
+
+[Host]
+name = d3
+ip = 192.168.57.42/26
+route = default Rd
+ttl = 64
+
+[Host]
+name = d2
+ip = 192.168.57.72/28
+route = default Rd
+ttl = 64
+
+[Router]
+name = Rd
+ip = 192.168.57.49/27
+ip = 10.42.4.1/30
+ip = 10.42.3.2/30
+route = default Rc
+route = 192.168.2.0/24 Re
+ttl = 64
+
+[Router]
+name = Re
+ip = 10.42.4.5/30
+ip = 192.168.2.1/26
+route = default Rd
+ttl = 64
+
+[Router]
+name = Rf
+ip = 10.42.6.2/30
+ip = 10.4.52.69/18
+route = default Rj
+ttl = 64
+
+[Host]
+name = f4
+ip = 10.4.6.10/16
+route = default Rf
+ttl = 64
+
+[Host]
+name = f3
+ip = 10.4.49.45/20
+route = default Rf
+ttl = 64
+
+[Host]
+name = f2
+ip = 10.4.18.18/17
+route = default Rf
+ttl = 64
+
+[Host]
+name = f1
+ip = 10.4.29.84/16
+route = default Rf
+ttl = 64
+
+[Host]
+name = e3
+ip = 192.168.2.78/26
+route = default Re
+ttl = 64
+
+[Host]
+name = e2
+ip = 192.168.2.12/26
+route = default Re
+ttl = 64
+
+[Host]
+name = e1
+ip = 192.168.2.8/26
+route = default Re
+ttl = 64
+
+[Host]
+name = j3
+ip = 10.13.17.98/24
+route = default Rj
+ttl = 64
+
+[Host]
+name = j2
+ip = 10.13.17.77/25
+route = default Rj
+ttl = 64
+
+[Host]
+name = j1
+ip = 10.13.17.112/24
+route = default Rj
+ttl = 64
+
+[Router]
+name = Rj
+ip = 10.13.17.63/24
+ip = 10.42.5.2/30
+ip = 10.42.8.1/30
+ip = 10.42.6.1/30
+route = default Rh
+route = 10.4.0.0/16 Rf
+ttl = 64
+
+[Router]
+name = Rh
+ip = 10.42.8.2/30
+ip = 172.16.207.1/20
+route = default Ra
+route = 10.13.0.0/16 Rj
+route = 10.4.0.0/16 Rj
+ttl = 64
+
+[Host]
+name = h1
+ip = 172.16.192.1/20
+route = default Ra
+route = 10.4.0.0/16 Rh
+ttl = 64
+
+[Host]
+name = h2
+ip = 172.16.205.85/16
+route = default Ra
+route = 10.4.0.0/16 Rh
+ttl = 64
+
+[Host]
+name = h3
+ip = 172.16.186.12/17
+route = default Ra
+route = 10.4.0.0/16 Rh
+ttl = 64
+
+[Router]
+name = Ri
+ip = 10.42.1.1/30
+ip = 163.2.25.27/16
+ip = 10.42.1.6/30
+route = default Internet
+route = 10.13.0.0/16 Rg
+route = 10.4.0.0/16 Rg
+route = 10.7.0.0/16 Rg
+route = 172.16.192.0/26 Ra
+route = 172.16.128.0/26 Ra
+route = 172.16.24.0/26 Ra
+route = 10.118.218.0/24 Ra
+route = 10.100.0.0/16 Ra
+route = 192.168.0.0/16 Ra
+ttl = 64
+
+[Router]
+name = Rg
+ip = 10.42.1.5/30
+ip = 10.7.18.129/25
+ip = 10.42.5.1/30
+route = default Rj
+route = 10.1.0.0/16 Ri
+ttl = 64
+
+[Host]
+name = g1
+ip = 10.7.18.188/25
+route = default Rg
+ttl = 64
+
+[Host]
+name = g2
+ip = 10.7.18.254/24
+route = default Rg
+ttl = 64
+
+[Host]
+name = g3
+ip = 10.7.18.242/25
+route = default Rg
+ttl = 64
+
+[Router]
+name = Internet
+ip = 163.2.25.27/16
+route = default Ri
+ttl = 64
+
+[Router]
+name = Rz
+ip = 172.16.24.254/24
+ip = 10.118.218.12/26
+route = default Rb
+ttl = 64
+
+[Host]
+name = z1
+ip = 10.118.218.30/27
+route = default Rz
+ttl = 64
+
+[Host]
+name = z2
+ip = 10.118.218.7/28
+route = default Rz
+ttl = 64

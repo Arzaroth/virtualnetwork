@@ -1,0 +1,79 @@
+[Host]
+name = d1
+ip = 192.168.57.51/27
+route = default Rd
+ttl = 128
+
+[Host]
+name = d3
+ip = 192.168.57.42/26
+route = default Rd
+ttl = 128
+
+[Host]
+name = d2
+ip = 192.168.57.72/28
+route = default Rd
+ttl = 128
+
+[Router]
+name = Rd
+ip = 192.168.57.49/27
+ip = 10.42.4.1/30
+route = default Re
+ttl = 255
+
+[Router]
+name = Re
+ip = 10.42.4.2/30
+ip = 192.168.2.1/26
+ip = 10.42.4.6/30
+route = default Rd
+route = 10.4.0.0/19 Rf
+ttl = 255
+
+[Router]
+name = Rf
+ip = 10.42.4.5/30
+ip = 10.4.52.69/18
+route = default Re
+ttl = 255
+
+[Host]
+name = f4
+ip = 10.4.6.10/16
+route = default Rf
+ttl = 64
+
+[Host]
+name = f3
+ip = 10.4.49.45/20
+route = default Rf
+ttl = 64
+
+[Host]
+name = f2
+ip = 10.4.18.18/17
+route = default Rf
+ttl = 64
+
+[Host]
+name = f1
+ip = 10.4.29.84/16
+route = default Rf
+ttl = 64
+
+[Host]
+name = e3
+ip = 192.168.2.78/26
+route = default Re
+
+[Host]
+name = e2
+ip = 192.168.2.12/26
+route = default Re
+
+[Host]
+name = e1
+ip = 192.168.2.8/26
+route = default Re
