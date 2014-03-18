@@ -16,4 +16,4 @@ Project Current State
 ==============
 
 This project is currently under development.
-However, as the pyrser library is also evolving, it may need some adjustement in the future.
+However, since the pyrser library is also evolving, it may need some adjustements in the future.
