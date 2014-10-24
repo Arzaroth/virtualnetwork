@@ -5,36 +5,29 @@ import pyrser
 import sys
 import cmd
 import os
-import getopt
 import glob
+import docopt
 import ipaddress
+from functools import wraps
 from network import *
 
-VERSION = "0.1.2c"
+VERSION = "0.2.0a"
 PRGM = os.path.basename(__file__)
 
+def docopt_cmd(func):
+    @wraps(func)
+    def wrapper(self, args):
+        try:
+            opts = docopt.docopt(func.__doc__, args)
+        except docopt.DocoptExit as e:
+            print(e, file=sys.stderr)
+            return
+        except SystemExit:
+            return
+        return func(self, opts)
+    return wrapper
+
 class NetworkShell(cmd.Cmd):
-    intro = """
-    {prgm} {ver}
-    A network comprehension tool.
-    Basic launching: {prgm} file
-    Type help or ? to list commands.
-
-    OPTIONS:
-        -h,--help               Show this help and exit
-        --grammar               Show you how to create your files
-
-    NOTES:
-        - This tool currently doesn't check if either Network address or subnet broadcast address is taken. Remember to check it manually
-        - This tool also currently doesn't handle "Internet". If you want to add an Internet routing, add a router with hostname "Internet",
-          give it the same ip as the router, set default route to the router and the ttl to 255.
-          Be aware that the returning TTL will be a maximum value, if the packet isn't lost.
-        - The author of this tool won't be responsible for misuses of it
-        - The code of this tool is currently open source. If you experiment issues, feel free to report or improve it
-
-    AUTHOR:
-        Original program by Arzaroth <lekva@arzaroth.com>
-    """.format(prgm = PRGM, ver = VERSION)
     prompt = 'network> '
 
     def __init__(self, network):
@@ -43,7 +36,7 @@ class NetworkShell(cmd.Cmd):
 
     def cmdloop(self, intro=None):
         if intro is None:
-            print(self.intro)
+            print(__doc__)
         try:
             cmd.Cmd.cmdloop(self, intro="")
             self.postloop()
@@ -51,15 +44,17 @@ class NetworkShell(cmd.Cmd):
             print("^C", end="")
             self.cmdloop(intro)
 
+    @docopt_cmd
     def do_ping(self, args):
         """Try to connect two differents host, display route used. On success, return TTL.
-Ex: ping a1 b1"""
+
+USAGE:
+  ping <host1> <host2>
+
+OPTIONS:
+  -h --help     Show this help."""
         if self._map is None:
             print("No network map loaded yet", file = sys.stderr)
-            return False
-        targets = args.split()
-        if not targets[1:]:
-            print("usage: ping <host1> <host2>", file = sys.stderr)
             return False
         def checkhost(host):
             if host not in self._map:
@@ -69,11 +64,18 @@ Ex: ping a1 b1"""
                 except ValueError:
                     return []
             return [self._map[host]]
-        hz = [checkhost(x) for x in targets]
-        if not all([x for x in hz]):
-            print("Unknown host {0}".format(targets[[x for x in hz].index([])]), file = sys.stderr)
-            return False
-        ret,ttl = hz[0][0].canConnect(hz[1][0])
+        hz = []
+        for host in args.values():
+            namedhost = checkhost(host)
+            if not namedhost:
+                print("{0}: Unknown host".format(host), file=sys.stderr)
+                return False
+            if len(namedhost) > 1:
+                print("{0}: Ambigous (matches {1})".format(host, ', '.join(x._name for x in namedhost)),
+                      file=sys.stderr)
+                return False
+            hz.append(namedhost[0])
+        ret, ttl = hz[0].canConnect(hz[1])
         if not ret:
             print("Unable to etablish connection\nPacket dropped...")
         else:
@@ -85,30 +87,39 @@ Ex: ping a1 b1"""
         else:
             return list(self._map.keys())
 
+    @docopt_cmd
     def do_hosts(self, args):
         """Show all hosts on the network, including routes.
-When providing argument, only display information for requested host
-Ex: hosts a1"""
+When providing argument, only display information for requested host.
+
+USAGE:
+  hosts [<host>...]
+
+OPTIONS:
+  -h --help     Show this help."""
         if self._map is None:
-            print("No network map loaded yet", file = sys.stderr)
+            print("No network map loaded yet", file=sys.stderr)
             return False
-        if not args:
-            for _,v in self._map.items():
-                v.showRoutes()
+        if not args['<host>']:
+            print('\n'.join(v.showRoutes() for v in self._map.values()), end='')
             return False
-        targets = args.split()
-        if not all([x in self._map for x in targets]):
-            print("Unknown host", file = sys.stderr)
+        if not all(x in self._map for x in args['<host>']):
+            print("Unknown host", file=sys.stderr)
             return False
-        for x in targets:
-            self._map[x].showRoutes()
+        print('\n'.join(self._map[x].showRoutes() for x in args['<host>']), end='')
 
     complete_hosts = complete_ping
 
+    @docopt_cmd
     def do_loadfile(self, args):
         """Load a new config file.
-Ex: loadfile sample"""
-        ret = get_networkmap(args)
+
+USAGE:
+  loadfile <file>
+
+OPTIONS:
+  -h --help     Show this help."""
+        ret = get_networkmap(args['<file>'])
         if ret is None:
             return False
         self._map = ret
@@ -135,42 +146,41 @@ Ex: loadfile sample"""
         pass
 
     def default(self, line):
-        print("{0}: command not found".format(line), file = sys.stderr)
+        print("{0}: command not found".format(line), file=sys.stderr)
+
 
 def get_networkmap(s):
+    if s is None:
+        return None
     try:
         return MapParser().parse_file(s).network
-    except (Exception, pyrser.error.ParseError) as inst:
-        print("{0}\nNo network map loaded".format(inst), file = sys.stderr)
+    except Exception as inst:
+        print("Unable to load network map".format(inst), file=sys.stderr)
         return None
 
-if __name__ == '__main__':
-    try:
-        opts,args = getopt.getopt(sys.argv[1:], "h", ["help", "grammar"])
-    except getopt.GetoptError as inst:
-        print(inst)
-        exit(1)
-    if any([o in ("-h", "--help") for o,_ in opts]):
-        print(NetworkShell(None).intro)
-        exit(0)
-    if any([o in ("--grammar") for o,_ in opts]):
-        print("""This is the EBNF used by this tool for parsing files. The entry point is the Map rule.
-        Map ::= [[Hosts | Routers] eol*]+ eof;
-        Hosts ::= '[' ws "Host" ws ']' eol+ [Name | Ip | TTL | Route]+;
-        Routers ::= '[' ws "Router" ws ']' eol+ [Name | Ip | TTL | Route]+;
-        Name ::= ws "name" ws '=' ws id ws eol+;
-        Ip ::= ws "ip" ws '=' ws cidraddr ws eol+;
-        TTL ::= ws "ttl" ws '=' ws num ws eol+;
-        Route ::= ws "route" ws '=' ws ["Default" | cidraddr] ws id ws eol+;
-        cidraddr ::= num '.' num '.' num '.' num '/' num;
-        ws ::= [' ' | '\\r' | '\\t']*;
-        num ::= ['0'..'9']+;
-        id ::= ['a'..'z'|'A'..'Z'|'_']['a'..'z'|'A'..'Z'|'0'..'9'|'_']*;
+__doc__ = """{prgm} {ver}
+A network comprehension tool.
 
-        Where eol stands for End Of Line and eof stands for End Of File.
-        Where \\r stands for a carriage return and \\t for a tabulation.
-        All strings are case insensitive.
-        Both name and ip field are mandatory for creating a host or router.
-""")
-        exit(0)
-    NetworkShell(get_networkmap(args[0]) if args else None).cmdloop()
+USAGE:
+  {prgm} [<file>]
+
+Type help or ? to list commands.
+
+OPTIONS:
+  -h --help               Show this help and exit.
+
+NOTES:
+  - This tool currently doesn't check if either Network address or subnet broadcast address is taken. Remember to check it manually.
+  - This tool also currently doesn't handle "Internet". If you want to add an Internet routing, add a router with hostname "Internet",
+    give it the same ip as the router, set default route to the router and the ttl to 255.
+    Be aware that the returning TTL will be a maximum value, if the packet isn't lost.
+  - The author of this tool won't be responsible for misuses of it.
+  - The code of this tool is currently open source. If you experiment issues, feel free to report or improve it.
+
+AUTHOR:
+  Original program by Arzaroth <lekva@arzaroth.com>
+""".format(prgm = PRGM, ver = VERSION)
+
+if __name__ == '__main__':
+    args = docopt.docopt(__doc__)
+    NetworkShell(get_networkmap(args['<file>'])).cmdloop()

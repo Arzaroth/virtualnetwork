@@ -44,14 +44,15 @@ class Host(object):
 
     def showRoutes(self):
         """
-        Print all the routes for a Host instance
+        return a string representing all the routes for a Host instance
         """
-        print("{0}:\n{pad}{1} -- {2}".format(self._name, ".".join(self._ip), CIDRtoIP(self._mask), pad = 1 * " "))
-        print("  routes:")
+        s = "{0}:\n{pad}{1} -- {2}\n".format(self._name, ".".join(self._ip), CIDRtoIP(self._mask), pad = 1 * " ")
+        s += "  routes:\n"
         for k,v in self._routes.items():
-            print("{pad}{rule} -> {route}".format(rule = k, route = v._name, pad = 1 * "  "))
+            s += "{pad}{rule} -> {route}\n".format(rule = k, route = v._name, pad = 1 * "  ")
         if self._defaultroute is not None:
-            print("{pad}Default -> {route}".format(route = self._defaultroute._name, pad = 2 * "  "))
+            s += "{pad}Default -> {route}\n".format(route = self._defaultroute._name, pad = 2 * "  ")
+        return s
 
     def _canConnect__(self, ip, mask, ignore = False):
         return iptobinpad(ip)[:max(mask, self._mask if not ignore else mask)] == iptobinpad(self._ip)[:max(mask, self._mask if not ignore else mask)]
@@ -148,13 +149,14 @@ class Router(Host):
 
     def showRoutes(self):
         """
-        Print all the routes for a Router instance
+        return a string representing all the routes for a Router instance
         """
-        print("{0}:".format(self._name))
+        s = "{0}:\n".format(self._name)
         for x in self._ips:
-            print("{pad}{1} -- {2}".format(self._name, ".".join(x[0]), CIDRtoIP(x[1]), pad = 1 * "  "))
-        print("  routes:")
+            s += "{pad}{1} -- {2}\n".format(self._name, ".".join(x[0]), CIDRtoIP(x[1]), pad = 1 * "  ")
+        s += "  routes:\n"
         for k,v in self._routes.items():
-            print("{pad}{rule} -> {route}".format(rule = k, route = v._name, pad = 2 * "  "))
+            s += "{pad}{rule} -> {route}\n".format(rule = k, route = v._name, pad = 2 * "  ")
         if self._defaultroute is not None:
-            print("{pad}Default -> {route}".format(route = self._defaultroute._name, pad = 2 * "  "))
+            s += "{pad}Default -> {route}\n".format(route = self._defaultroute._name, pad = 2 * "  ")
+        return s

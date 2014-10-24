@@ -40,6 +40,7 @@ class MapParser(grammar.Grammar):
                default = insensitiveCase("Default"),
                internet = insensitiveCase("Internet"))
 
+
 @meta.hook(MapParser)
 def init_map(self, ast):
     ast.network = {}
