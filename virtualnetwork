@@ -77,7 +77,7 @@ OPTIONS:
             hz.append(namedhost[0])
         ret, ttl = hz[0].canConnect(hz[1])
         if not ret:
-            print("Unable to etablish connection\nPacket dropped...")
+            print("Unable to establish connection\nPacket dropped...")
         else:
             print("Success -- TTL = {}".format(ttl))
 
